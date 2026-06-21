@@ -1,2 +1,525 @@
-[cyber_ai.html](https://github.com/user-attachments/files/29169826/cyber_ai.html)
-# Cyber-AI
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberGuard AI | Phishing Analyzer</title>
+    <style>
+        /* Paleta de Cores e Variáveis */
+        :root {
+            --bg-dark: #0b1120;
+            --bg-panel: #1e293b;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8;
+            --safe-green: #10b981;
+            --warn-yellow: #f59e0b;
+            --danger-red: #ef4444;
+            --border-color: #334155;
+            --font-main: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: 'Courier New', Courier, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: var(--font-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, transparent 50%);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: var(--accent-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            margin-top: 10px;
+            font-size: 1.1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: rgba(56, 189, 248, 0.1);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        /* Input Area */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        textarea, input[type="text"] {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            color: var(--text-light);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            resize: vertical;
+        }
+
+        textarea:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+        }
+
+        .analyze-btn {
+            background: var(--accent-blue);
+            color: #000;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .analyze-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .analyze-btn:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Scanner Animation */
+        .scanner-loader {
+            display: none;
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--border-color);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 50%;
+            background: var(--accent-blue);
+            position: absolute;
+            animation: scan 1.5s infinite ease-in-out alternate;
+        }
+
+        @keyframes scan {
+            0% { left: 0%; width: 10%; }
+            100% { left: 90%; width: 10%; }
+        }
+
+        /* Results Area */
+        .results-area {
+            display: none;
+            margin-top: 30px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 30px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .status-card {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .status-safe { background: rgba(16, 185, 129, 0.1); border: 1px solid var(--safe-green); color: var(--safe-green); }
+        .status-warn { background: rgba(245, 158, 11, 0.1); border: 1px solid var(--warn-yellow); color: var(--warn-yellow); }
+        .status-danger { background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger-red); color: var(--danger-red); }
+
+        .status-icon {
+            font-size: 2rem;
+        }
+
+        .analysis-details {
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .analysis-details h3 {
+            margin-bottom: 15px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .log-list {
+            list-style: none;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+
+        .log-list li {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        
+        .badge-red { background: var(--danger-red); color: white; }
+        .badge-yellow { background: var(--warn-yellow); color: black; }
+        .badge-green { background: var(--safe-green); color: white; }
+
+        /* Futuro API Placeholder */
+        .api-badge {
+            display: inline-block;
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            border: 1px dashed var(--border-color);
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🔐 CyberGuard AI</h1>
+        <p>Motor de Análise Heurística contra Phishing e Engenharia Social</p>
+    </div>
+
+    <div class="container">
+        
+        <!-- Controles de Tab -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('url')">Analisar URL</button>
+            <button class="tab-btn" onclick="switchTab('text')">Analisar E-mail / Mensagem</button>
+        </div>
+
+        <!-- Área de Input -->
+        <div class="input-group">
+            <input type="text" id="input-url" placeholder="Ex: http://login-banco-seguro-atualizacao.com" autocomplete="off">
+            <textarea id="input-text" rows="6" placeholder="Cole o conteúdo do e-mail ou SMS suspeito aqui..." style="display: none;"></textarea>
+            
+            <button class="analyze-btn" id="btn-analyze" onclick="startAnalysis()">
+                <span>Inspecionar Ameaça</span> 🛡️
+            </button>
+        </div>
+
+        <!-- Animação de Scanner -->
+        <div class="scanner-loader" id="scanner">
+            <p style="color: var(--accent-blue); font-family: var(--font-mono);">Iniciando varredura neural...</p>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+
+        <!-- Resultados -->
+        <div class="results-area" id="results">
+            <div class="status-card status-safe" id="status-card">
+                <div class="status-icon" id="status-icon">🟢</div>
+                <div>
+                    <div id="status-title">Provavelmente Seguro</div>
+                    <div style="font-size: 0.9rem; font-weight: normal; margin-top: 5px; color: var(--text-muted);" id="status-desc">
+                        Nenhum padrão malicioso óbvio detectado.
+                    </div>
+                </div>
+            </div>
+
+            <div class="analysis-details">
+                <h3>Logs da Análise</h3>
+                <ul class="log-list" id="log-list">
+                    <!-- Logs gerados via JS -->
+                </ul>
+            </div>
+            
+            <div style="text-align: center;">
+                <div class="api-badge">Simulação Local. Integração com API (LLM) prevista no Roadmap.</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- ESTADO DA UI ---
+        let currentMode = 'url';
+        
+        function switchTab(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            if (mode === 'url') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('input-url').style.display = 'block';
+                document.getElementById('input-text').style.display = 'none';
+            } else {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('input-url').style.display = 'none';
+                document.getElementById('input-text').style.display = 'block';
+            }
+            
+            // Reseta UI
+            document.getElementById('results').style.display = 'none';
+        }
+
+        // --- MOTOR HEURÍSTICO (SIMULAÇÃO DE IA) ---
+        
+        function analyzeURL(url) {
+            let score = 0;
+            let logs = [];
+
+            // 1. Checa HTTPS
+            if (!url.startsWith('https://')) {
+                score += 40;
+                logs.push({ level: 'yellow', text: 'Protocolo não seguro (HTTP ao invés de HTTPS).' });
+            } else {
+                logs.push({ level: 'green', text: 'Conexão criptografada (HTTPS) detectada.' });
+            }
+
+            // 2. IP ao invés de domínio
+            const ipRegex = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/;
+            if (ipRegex.test(url)) {
+                score += 60;
+                logs.push({ level: 'red', text: 'URL utiliza endereço IP direto ao invés de domínio. Tática comum em phishing.' });
+            }
+
+            // 3. Tamanho excessivo ou hífens em excesso
+            if (url.length > 75) {
+                score += 20;
+                logs.push({ level: 'yellow', text: 'URL excessivamente longa (pode tentar ocultar o domínio real).' });
+            }
+            
+            const domainParts = url.split('/');
+            if(domainParts[2] && (domainParts[2].match(/-/g) || []).length > 2) {
+                score += 30;
+                logs.push({ level: 'red', text: 'Múltiplos hífens no domínio (Ex: login-conta-segura). Tática de falsificação.' });
+            }
+
+            // 4. Palavras-chave suspeitas na URL
+            const suspiciousWords = ['login', 'update', 'secure', 'account', 'banking', 'verify', 'free', 'gratis', 'promocao'];
+            let foundWords = suspiciousWords.filter(word => url.toLowerCase().includes(word));
+            
+            if (foundWords.length > 0) {
+                score += (foundWords.length * 15);
+                logs.push({ level: 'yellow', text: `Palavras de isca detectadas na URL: ${foundWords.join(', ')}` });
+            }
+
+            if (logs.length === 1 && score === 0) {
+                logs.push({ level: 'green', text: 'Estrutura da URL parece padrão e limpa.' });
+            }
+
+            return { score, logs };
+        }
+
+        function analyzeText(text) {
+            let score = 0;
+            let logs = [];
+            const textLower = text.toLowerCase();
+
+            // 1. Senso de Urgência
+            const urgencyWords = ['urgente', 'imediatamente', 'bloqueada', 'cancelada', 'suspensa', '24 horas', 'ação requerida'];
+            let foundUrgency = urgencyWords.filter(word => textLower.includes(word));
+            
+            if (foundUrgency.length > 0) {
+                score += 40;
+                logs.push({ level: 'red', text: `Gatilhos de Engenharia Social (Urgência): ${foundUrgency.join(', ')}` });
+            }
+
+            // 2. Solicitação de Dados ou Ação
+            const actionWords = ['clique aqui', 'acesse o link', 'confirme seus dados', 'atualize sua senha', 'baixar anexo'];
+            let foundAction = actionWords.filter(word => textLower.includes(word));
+            
+            if (foundAction.length > 0) {
+                score += 30;
+                logs.push({ level: 'yellow', text: `Solicitação direta de ação/clique detectada.` });
+            }
+
+            // 3. Recompensas / Dinheiro
+            const moneyWords = ['sorteio', 'ganhou', 'transferência', 'pix', 'dinheiro fácil', 'herança'];
+            let foundMoney = moneyWords.filter(word => textLower.includes(word));
+            
+            if (foundMoney.length > 0) {
+                score += 50;
+                logs.push({ level: 'red', text: `Tática de isca financeira detectada.` });
+            }
+
+            if (score === 0) {
+                logs.push({ level: 'green', text: 'Nenhum padrão clássico de phishing textual detectado.' });
+            }
+
+            return { score, logs };
+        }
+
+        // --- CONTROLADOR DA INTERFACE ---
+
+        function startAnalysis() {
+            const inputVal = currentMode === 'url' ? document.getElementById('input-url').value : document.getElementById('input-text').value;
+            
+            if (!inputVal.trim()) {
+                alert("Por favor, insira dados para análise.");
+                return;
+            }
+
+            // UI: Inicia Scanner
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('scanner').style.display = 'block';
+            document.getElementById('btn-analyze').disabled = true;
+
+            // Simula latência de rede/processamento de IA
+            setTimeout(() => {
+                processResults(inputVal);
+            }, 1800);
+        }
+
+        function processResults(inputVal) {
+            // Esconde scanner
+            document.getElementById('scanner').style.display = 'none';
+            document.getElementById('btn-analyze').disabled = false;
+            
+            // Executa Lógica
+            const result = currentMode === 'url' ? analyzeURL(inputVal) : analyzeText(inputVal);
+            
+            // Atualiza UI
+            renderResults(result.score, result.logs);
+        }
+
+        function renderResults(score, logs) {
+            const resultsArea = document.getElementById('results');
+            const statusCard = document.getElementById('status-card');
+            const statusIcon = document.getElementById('status-icon');
+            const statusTitle = document.getElementById('status-title');
+            const statusDesc = document.getElementById('status-desc');
+            const logList = document.getElementById('log-list');
+
+            // Limpa classes antigas
+            statusCard.className = 'status-card';
+            logList.innerHTML = '';
+
+            // Determina Risco
+            if (score >= 60) {
+                statusCard.classList.add('status-danger');
+                statusIcon.textContent = '🔴';
+                statusTitle.textContent = 'Ameaça Crítica Detectada';
+                statusDesc.textContent = 'Alta probabilidade de fraude, phishing ou malware. Não interaja.';
+            } else if (score >= 30) {
+                statusCard.classList.add('status-warn');
+                statusIcon.textContent = '🟡';
+                statusTitle.textContent = 'Conteúdo Suspeito';
+                statusDesc.textContent = 'Exibe características comuns a ataques de engenharia social. Proceda com extrema cautela.';
+            } else {
+                statusCard.classList.add('status-safe');
+                statusIcon.textContent = '🟢';
+                statusTitle.textContent = 'Provavelmente Seguro';
+                statusDesc.textContent = 'O motor heurístico não detectou assinaturas óbvias de ameaça.';
+            }
+
+            // Renderiza Logs
+            logs.forEach(log => {
+                const li = document.createElement('li');
+                let badgeClass = '';
+                let badgeText = '';
+
+                if(log.level === 'red') { badgeClass = 'badge-red'; badgeText = 'CRÍTICO'; }
+                else if(log.level === 'yellow') { badgeClass = 'badge-yellow'; badgeText = 'ALERTA'; }
+                else { badgeClass = 'badge-green'; badgeText = 'INFO'; }
+
+                li.innerHTML = `<span class="badge ${badgeClass}">${badgeText}</span> <span>${log.text}</span>`;
+                logList.appendChild(li);
+            });
+
+            // Mostra a área
+            resultsArea.style.display = 'block';
+        }
+
+        // ESPAÇO FUTURO PARA API:
+        /*
+        async function analyzeWithRealAI(text) {
+            const response = await fetch('URL_DA_SUA_API_AQUI', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt: "Analise este texto para phishing: " + text })
+            });
+            const data = await response.json();
+            return parseAIResponse(data);
+        }
+        */
+    </script>
+</body>
+</html>
